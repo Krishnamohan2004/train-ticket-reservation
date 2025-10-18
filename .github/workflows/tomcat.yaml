@@ -100,7 +100,7 @@ jobs:
 
       - name: 🚀 Deploy to PROD
         env:
-          URL: ${{ secrets.TOMCAT_URL_POD }}
+           URL: ${{ secrets.TOMCAT_URL_POD }}
           USER: ${{ secrets.TOMCAT_USER_POD }}
           PASS: ${{ secrets.TOMCAT_PASS_POD }}
         run: |      
