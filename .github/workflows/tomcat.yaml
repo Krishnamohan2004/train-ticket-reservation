@@ -1,4 +1,4 @@
-name: CI-CD Pipeline with GitHub Actions, SonarQube, Nexus, and Tomcat
+name: CI-CD Pipeline with SonarQube, Nexus, and Tomcat
 
 on:
   push:
@@ -6,12 +6,6 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build-deploy:
