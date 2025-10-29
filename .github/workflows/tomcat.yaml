@@ -2,7 +2,7 @@ name: CI-CD Pipeline with SonarQube, Nexus, and Tomcat
 
 on:
   push:
-    branches: [ main ] 
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -25,11 +25,12 @@ jobs:
 
       # Step 3: Build with Maven
       - name: Build project
-        run: mvn clean package -DskipTests# 
-        # Step 4: SonarQube Code Analysis
+        run: mvn clean package -DskipTests
+
+      # Step 4: SonarQube Code Analysis
       - name: SonarQube Scan
         env:
-          SONAR_HOST_URL: http://<your-sonarqube-host>:9000
+          SONAR_HOST_URL: http://54.66.33.1:9009
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn sonar:sonar \
@@ -37,8 +38,6 @@ jobs:
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.login=$SONAR_TOKEN
 
-
-      
       # Step 5: Upload artifact to Nexus
       - name: Upload WAR to Nexus
         env:
@@ -46,14 +45,14 @@ jobs:
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
         run: |
           mvn deploy \
-            -Dnexus.url=http://<your-nexus-host>:8081/repository/maven-releases/ \
+            -Dnexus.url=http://54.66.33.1:8081/repository/maven-releases/ \
             -Dnexus.username=$NEXUS_USERNAME \
             -Dnexus.password=$NEXUS_PASSWORD
 
       # Step 6: Deploy to Tomcat
       - name: Deploy WAR to Tomcat
         env:
-          URL: http://<your-tomcat-host>:8080/manager/text
+          URL: http://54.66.33.1:8080/manager/text
           USER: ${{ secrets.TOMCAT_USER }}
           PASS: ${{ secrets.TOMCAT_PASSWORD }}
         run: |
