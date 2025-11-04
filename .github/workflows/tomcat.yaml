@@ -9,14 +9,38 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - run: mvn -B clean verify
-      - run: mvn -B sonar:sonar -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-      - uses: actions/upload-artifact@v4
+
+      - name: Cache Maven Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build the Project
+        run: mvn -B clean verify
+
+      - name: Run SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn -B sonar:sonar \
+            -Dsonar.projectKey=myapp \
+            -Dsonar.projectName="MyApp" \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      - name: Upload WAR Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: app-war
           path: target/*.war
@@ -25,32 +49,47 @@ jobs:
     needs: build-and-scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download WAR Artifact
+        uses: actions/download-artifact@v4
         with:
           name: app-war
           path: target
-      - run: |
-          VERSION=1.0.${{ github.run_number }}
+
+      - name: Set Version
+        id: vars
+        run: echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Publish WAR to Nexus
+        run: |
           mvn deploy:deploy-file \
             -Durl=${{ secrets.NEXUS_URL }} \
             -DrepositoryId=nexus \
             -Dfile=target/*.war \
             -DgroupId=com.example \
             -DartifactId=myapp \
-            -Dversion=$VERSION \
+            -Dversion=${{ env.VERSION }} \
             -Dpackaging=war \
             -DgeneratePom=true
+        env:
+          MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
 
   deploy-to-tomcat:
     needs: publish-to-nexus
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download WAR Artifact
+        uses: actions/download-artifact@v4
         with:
           name: app-war
           path: target
-      - run: |
+
+      - name: Undeploy Existing App (if any)
+        run: |
+          curl -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
+            "${{ secrets.TOMCAT_URL }}/manager/text/undeploy?path=/myapp" || true
+
+      - name: Deploy WAR to Tomcat
+        run: |
           curl -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
             -T target/*.war \
             "${{ secrets.TOMCAT_URL }}/manager/text/deploy?path=/myapp&update=true"
-
