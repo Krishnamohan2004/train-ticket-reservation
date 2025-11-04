@@ -52,5 +52,5 @@ jobs:
       - run: |
           curl -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
             -T target/*.war \
-            "${{ secrets.TOMCAT_MANAGER_URL }}/manager/text/deploy?path=/myapp&update=true"
+            "${{ secrets.TOMCAT_URL }}/manager/text/deploy?path=/myapp&update=true"
 
