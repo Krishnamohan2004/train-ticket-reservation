@@ -1,4 +1,4 @@
-name:  CI/CD pipelie to deploy to tomcat
+name: CI/CD pipeline to Deploy to Tomcat
 on:
   push:
     branches: master
