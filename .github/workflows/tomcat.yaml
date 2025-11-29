@@ -1,12 +1,10 @@
 name: Build and Deploy to Tomcat
-
 on:
   push:
     branches:
       - master   # DEV / PROD deployment
       - develop  # TEST deployment
       - preprod  # PRE-PROD deployment
-
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
