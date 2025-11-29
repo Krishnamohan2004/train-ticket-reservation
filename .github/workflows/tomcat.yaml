@@ -1,11 +1,12 @@
 name: Build and Deploy to Tomcat
 
+# Trigger: automatic on push for DEV/TEST, manual for PRE-PROD/PROD
 on:
   push:
     branches:
-      - master   # DEV / PROD deployment
+      - master   # DEV deployment
       - develop  # TEST deployment
-      - preprod  # PRE-PROD deployment
+  workflow_dispatch:   # Manual trigger for PRE-PROD and PROD
 
 jobs:
   # ---------------- DEV Deployment ----------------
@@ -44,10 +45,9 @@ jobs:
           -T target/TrainBook-1.0.0-SNAPSHOT.war \
           "http://${{ secrets.TOMCAT_HOST_TEST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
 
-  # ---------------- PRE-PROD Deployment ----------------
+  # ---------------- PRE-PROD Deployment (Manual) ----------------
   deploy-preprod:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/preprod'
     environment: PRE-PROD
     steps:
       - uses: actions/checkout@v4
@@ -62,11 +62,9 @@ jobs:
           -T target/TrainBook-1.0.0-SNAPSHOT.war \
           "http://${{ secrets.TOMCAT_HOST_PRE_PROD }}:8080/manager/text/deploy?path=/TrainBook&update=true"
 
-  # ---------------- PROD Deployment ----------------
+  # ---------------- PROD Deployment (Manual) ----------------
   deploy-prod:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    needs: [deploy-dev, deploy-test, deploy-preprod]
     environment: PROD
     steps:
       - uses: actions/checkout@v4
