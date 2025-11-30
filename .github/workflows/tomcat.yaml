@@ -35,7 +35,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - run: mvn clean package -DskipTests
-      - name: Deploy to TEST Tomcat
+      - name: Deploy to application Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER_TEST }}:${{ secrets.TOMCAT_PASSWORD_TEST }} \
           -T target/TrainBook-1.0.0-SNAPSHOT.war \
