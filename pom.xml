@@ -9,15 +9,15 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <!-- Nexus Upload -->
+    <!-- Correct Nexus Deploy Configuration -->
     <distributionManagement>
         <repository>
             <id>nexus</id>
-            <url>${env.NEXUS_URL}/repository/maven-releases/</url>
+            <url>RELEASE_REPO_URL_WILL_COME_FROM_SETTINGS_XML</url>
         </repository>
         <snapshotRepository>
             <id>nexus</id>
-            <url>${env.NEXUS_URL}/repository/maven-snapshots/</url>
+            <url>SNAPSHOT_REPO_URL_WILL_COME_FROM_SETTINGS_XML</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -45,7 +45,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Build WAR -->
+            <!-- WAR Plugin -->
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.3</version>
@@ -54,7 +54,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Optional: Webapp runner -->
+            <!-- Optional runner -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
