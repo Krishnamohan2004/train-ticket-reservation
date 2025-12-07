@@ -1,7 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>TrainBook</groupId>
@@ -9,20 +8,29 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
+    <!-- ⭐ ADD THIS: tells Maven where to deploy artifacts -->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>nexus-snapshots</id> <!-- must match settings.xml -->
+            <url>http://18.117.104.118/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>nexus-releases</id> <!-- must match settings.xml -->
+            <url>http://18.117.104.118/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <sourceDirectory>src</sourceDirectory>
-
         <resources>
             <resource>
                 <directory>src</directory>
                 <excludes>
-                    <exclude>**/*.java</exclude>
+                    <exclude>*/.java</exclude>
                 </excludes>
             </resource>
         </resources>
-
         <plugins>
-
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
@@ -31,7 +39,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.2.3</version>
@@ -39,7 +46,6 @@
                     <warSourceDirectory>WebContent</warSourceDirectory>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -63,7 +69,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>io.snyk</groupId>
                 <artifactId>snyk-maven-plugin</artifactId>
@@ -73,7 +78,6 @@
                     <org>Venn1991</org>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 
@@ -83,33 +87,15 @@
             <artifactId>postgresql</artifactId>
             <version>42.3.7</version>
         </dependency>
-
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.28</version>
         </dependency>
-
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
         </dependency>
     </dependencies>
-
-    <!-- ========================= -->
-    <!--  NEXUS DEPLOYMENT BLOCK   -->
-    <!-- ========================= -->
-    <distributionManagement>
-        <snapshotRepository>
-            <id>nexus</id>
-            <url>http://YOUR_NEXUS_IP:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
-
-        <repository>
-            <id>nexus-releases</id>
-            <url>http://YOUR_NEXUS_IP:8081/repository/maven-releases/</url>
-        </repository>
-    </distributionManagement>
-
 </project>
