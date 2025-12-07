@@ -9,32 +9,10 @@
 
   <mirrors>
     <mirror>
-      <id>nexus-mirror</id>
-      <name>Nexus Mirror</name>
+      <id>nexus</id>
+      <name>Nexus Public Mirror</name>
       <url>${env.NEXUS_URL}/repository/maven-public/</url>
       <mirrorOf>*</mirrorOf>
     </mirror>
   </mirrors>
-
-  <profiles>
-    <profile>
-      <id>nexus</id>
-      <repositories>
-        <repository>
-          <id>central</id>
-          <url>${env.NEXUS_URL}/repository/maven-public/</url>
-        </repository>
-      </repositories>
-      <pluginRepositories>
-        <pluginRepository>
-          <id>central</id>
-          <url>${env.NEXUS_URL}/repository/maven-public/</url>
-        </pluginRepository>
-      </pluginRepositories>
-    </profile>
-  </profiles>
-
-  <activeProfiles>
-    <activeProfile>nexus</activeProfile>
-  </activeProfiles>
 </settings>
