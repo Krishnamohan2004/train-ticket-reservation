@@ -38,16 +38,18 @@ jobs:
             -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
+      # ---------- NEXUS UPLOAD FIXED ----------
       - name: Upload Artifact to Nexus
         run: |
           mvn deploy \
-            -Dnexus.url=${{ secrets.NEXUS_URL }} \
+            -DaltDeploymentRepository=nexus::default::http://${{ secrets.NEXUS_URL }}/repository/maven-snapshots/ \
             -Dnexus.username=${{ secrets.NEXUS_USERNAME }} \
             -Dnexus.password=${{ secrets.NEXUS_PASSWORD }}
 
-
+      # ---------- TOMCAT DEPLOY FIXED ----------
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-            -T target/TrainBook-1.0.0-SNAPSHOT.war \
-            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+              -T target/TrainBook-1.0.0-SNAPSHOT.war \
+              "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+
