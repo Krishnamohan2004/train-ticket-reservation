@@ -24,7 +24,6 @@
 
     <build>
         <sourceDirectory>src</sourceDirectory>
-
         <resources>
             <resource>
                 <directory>src</directory>
@@ -33,7 +32,6 @@
                 </excludes>
             </resource>
         </resources>
-
         <plugins>
             <!-- Java Compiler -->
             <plugin>
@@ -107,3 +105,4 @@
     </dependencies>
 
 </project>
+
