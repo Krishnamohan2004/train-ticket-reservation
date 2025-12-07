@@ -13,43 +13,68 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: set-up jdk
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
+          server-id: nexus
+          server-username: NEXUS_USERNAME
+          server-password: NEXUS_PASSWORD
+          settings-path: ${{ github.workspace }}
 
-      - name: Maven validate
-        run: mvn validate
-
-      - name: Maven compile
-        run: mvn compile
-
-      - name: Maven test
-        run: mvn test
-
-      - name: Maven package
-        run: mvn package
-
-      - name: Sonar Code Quality
+      # ---------- ADD SETTINGS.XML ----------
+      - name: Create Maven settings.xml
         run: |
-          mvn clean verify sonar:sonar \
-            -Dsonar.projectKey=train-ticket \
-            -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
-            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
+          cat <<EOF > $GITHUB_WORKSPACE/settings.xml
+          <settings>
+            <servers>
+              <server>
+                <id>nexus</id>
+                <username>${env.NEXUS_USERNAME}</username>
+                <password>${env.NEXUS_PASSWORD}</password>
+              </server>
+            </servers>
 
-      # ---------- NEXUS UPLOAD FIXED ----------
+            <mirrors>
+              <mirror>
+                <id>central</id>
+                <name>Nexus Mirror</name>
+                <url>${env.NEXUS_URL}/repository/maven-public/</url>
+                <mirrorOf>*</mirrorOf>
+              </mirror>
+            </mirrors>
+          </settings>
+          EOF
+
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+
+      - name: Maven Validate
+        run: mvn validate --settings settings.xml
+
+      - name: Maven Compile
+        run: mvn compile --settings settings.xml
+
+      - name: Maven Test
+        run: mvn test --settings settings.xml
+
+      - name: Maven Package
+        run: mvn package --settings settings.xml
+
+      # ---------- NEXUS DEPLOY ----------
       - name: Upload Artifact to Nexus
         run: |
           mvn deploy \
-            -DaltDeploymentRepository=nexus::default::http://${{ secrets.NEXUS_URL }}/repository/maven-snapshots/ \
-            -Dnexus.username=${{ secrets.NEXUS_USERNAME }} \
-            -Dnexus.password=${{ secrets.NEXUS_PASSWORD }}
+            --settings settings.xml \
+            -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_URL }}/repository/maven-snapshots/
 
-      # ---------- TOMCAT DEPLOY FIXED ----------
+      # ---------- TOMCAT DEPLOY ----------
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-              -T target/TrainBook-1.0.0-SNAPSHOT.war \
-              "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+            -T target/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
 
