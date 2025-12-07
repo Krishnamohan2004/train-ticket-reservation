@@ -10,71 +10,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK
+      # 2️⃣ Setup JDK 17
+      - name: Setup JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
-          server-id: nexus
-          server-username: NEXUS_USERNAME
-          server-password: NEXUS_PASSWORD
-          settings-path: ${{ github.workspace }}
 
-      # ---------- ADD SETTINGS.XML ----------
-      - name: Create Maven settings.xml
+      # 3️⃣ Maven Validate
+      - name: Maven validate
+        run: mvn validate -Dproject.build.sourceEncoding=UTF-8
+
+      # 4️⃣ Maven Compile
+      - name: Maven compile
+        run: mvn compile -Dproject.build.sourceEncoding=UTF-8
+
+      # 5️⃣ Maven Test
+      - name: Maven test
+        run: mvn test -Dproject.build.sourceEncoding=UTF-8
+
+      # 6️⃣ SonarQube Code Quality
+      - name: Sonar Code Quality
         run: |
-          cat <<EOF > $GITHUB_WORKSPACE/settings.xml
-          <settings>
-            <servers>
-              <server>
-                <id>nexus</id>
-                <username>${env.NEXUS_USERNAME}</username>
-                <password>${env.NEXUS_PASSWORD}</password>
-              </server>
-            </servers>
+          mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=train-ticket \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dproject.build.sourceEncoding=UTF-8
 
-            <mirrors>
-              <mirror>
-                <id>central</id>
-                <name>Nexus Mirror</name>
-                <url>${env.NEXUS_URL}/repository/maven-public/</url>
-                <mirrorOf>*</mirrorOf>
-              </mirror>
-            </mirrors>
-          </settings>
-          EOF
+      # 7️⃣ Maven Package
+      - name: Maven package
+        run: mvn package -DskipTests -Dproject.build.sourceEncoding=UTF-8
 
-        env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      # 8️⃣ Configure Maven settings.xml for Nexus
+      - name: Configure Maven for Nexus
+        run: |
+          mkdir -p ~/.m2
+          echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
 
-      - name: Maven Validate
-        run: mvn validate --settings settings.xml
-
-      - name: Maven Compile
-        run: mvn compile --settings settings.xml
-
-      - name: Maven Test
-        run: mvn test --settings settings.xml
-
-      - name: Maven Package
-        run: mvn package --settings settings.xml
-
-      # ---------- NEXUS DEPLOY ----------
+      # 9️⃣ Upload Artifact to Nexus
       - name: Upload Artifact to Nexus
-        run: |
-          mvn deploy \
-            --settings settings.xml \
-            -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_URL }}/repository/maven-snapshots/
+        run: mvn deploy -DskipTests=true
 
-      # ---------- TOMCAT DEPLOY ----------
+      # 🔟 Deploy WAR to Tomcat
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
             -T target/TrainBook-1.0.0-SNAPSHOT.war \
             "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
-
