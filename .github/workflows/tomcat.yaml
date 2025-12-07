@@ -38,6 +38,13 @@ jobs:
             -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
+      - name: Upload Artifact to Nexus
+        run: |
+          mvn deploy \
+            -Dnexus.url=${{ secrets.NEXUS_URL }} \
+            -Dnexus.username=${{ secrets.NEXUS_USERNAME }} \
+            -Dnexus.password=${{ secrets.NEXUS_PASSWORD }}
+
 
       - name: Deploy to Tomcat
         run: |
