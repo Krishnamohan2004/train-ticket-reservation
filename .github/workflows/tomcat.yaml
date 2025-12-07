@@ -1,52 +1,45 @@
-name: CI-CD Pipeline
+name: CI/CD pipeline to Deploy to Tomcat
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - master
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        cache: maven
+      - name: Maven validate
+        run: mvn validate
 
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v2
-      with:
-        args: >
-          -Dsonar.projectKey=train-ticket-reservation
-          -Dsonar.projectName="Train Ticket Reservation"
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Maven compile
+        run: mvn compile
 
-    - name: Build with Maven
-      run: mvn -B clean package
+      - name: Maven test
+        run: mvn test
 
-    - name: Upload to Nexus
-      run: |
-        mvn deploy -DskipTests \
-        -Dnexus.url=${{ secrets.NEXUS_URL }} \
-        -Dnexus.username=${{ secrets.NEXUS_USERNAME }} \
-        -Dnexus.password=${{ secrets.NEXUS_PASSWORD }}
+      - name: Sonar Code Quality
+        run: |
+          mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=train-ticket \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-    - name: Deploy to Tomcat
-      run: |
-        WAR_FILE=$(ls target/*.war | head -1)
-        echo "Deploying $WAR_FILE to Tomcat..."
+       - name: Maven package
+        run: mvn package
 
-        curl -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASS }} \
-        -T $WAR_FILE \
-        "${{ secrets.TOMCAT_URL }}/deploy?path=/trainapp&update=true"
+      - name: Deploy to Tomcat
+        run: |
+          curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
+            -T target/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
