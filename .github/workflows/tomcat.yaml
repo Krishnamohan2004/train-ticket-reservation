@@ -1,4 +1,4 @@
-name: CI/CD pipeline to Deploy to Tomcat
+name: CI/CD Pipeline - Maven → Nexus → Tomcat
 
 on:
   push:
@@ -10,53 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # 1️⃣ Checkout Code
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Java 17
       - name: Setup JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3️⃣ Maven Validate
+      - name: Configure Maven for Nexus
+        run: |
+          mkdir -p ~/.m2
+          echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
+
       - name: Maven Validate
         run: mvn -B validate
 
-      # 4️⃣ Maven Compile
       - name: Maven Compile
         run: mvn -B compile
 
-      # 5️⃣ Maven Test
       - name: Maven Test
         run: mvn -B test
 
-      # 6️⃣ SonarQube Scan
-      - name: SonarQube Code Quality
+      - name: SonarQube Scan
         run: |
           mvn -B clean verify sonar:sonar \
             -Dsonar.projectKey=train-ticket \
             -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # 7️⃣ Package WAR
       - name: Maven Package
         run: mvn -B package -DskipTests
 
-      # 8️⃣ Configure Maven settings.xml for Nexus
-      - name: Configure Maven for Nexus
-        run: |
-          mkdir -p ~/.m2
-          echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
-
-      # 9️⃣ Upload Artifact to Nexus
       - name: Upload Artifact to Nexus
-        run: mvn -B deploy -DskipTests=true
+        run: mvn -B deploy -DskipTests
 
-      # 🔟 Deploy WAR to Tomcat Server
       - name: Deploy WAR to Tomcat
         run: |
           curl -v -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
