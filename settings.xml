@@ -1,28 +1,14 @@
 <settings>
   <servers>
-
-    <!-- Snapshot Repo Authentication -->
     <server>
-      <id>nexus</id>
-      <username>${env.NEXUS_USERNAME}</username>
-      <password>${env.NEXUS_PASSWORD}</password>
+      <id>nexus-snapshots</id>
+      <username>admin</username>
+      <password>Gagan@123456</password>
     </server>
-
-    <!-- Release Repo Authentication -->
     <server>
       <id>nexus-releases</id>
-      <username>${env.NEXUS_USERNAME}</username>
-      <password>${env.NEXUS_PASSWORD}</password>
+      <username>admin</username>
+      <password>Gagan@123456</password>
     </server>
-
   </servers>
-
-  <mirrors>
-    <mirror>
-      <id>nexus</id>
-      <name>Nexus Mirror</name>
-      <url>http://YOUR_EC2_IP:8081/repository/maven-public/</url>
-      <mirrorOf>*</mirrorOf>
-    </mirror>
-  </mirrors>
 </settings>
