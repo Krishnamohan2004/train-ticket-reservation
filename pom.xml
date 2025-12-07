@@ -1,5 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -8,7 +8,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <!-- ⭐ ADD THIS: tells Maven where to deploy artifacts -->
+    <!-- Deployment to Nexus -->
     <distributionManagement>
         <snapshotRepository>
             <id>nexus-snapshots</id> <!-- must match settings.xml -->
@@ -26,12 +26,14 @@
             <resource>
                 <directory>src</directory>
                 <excludes>
-                    <exclude>*/.java</exclude>
+                    <exclude>**/*.java</exclude> <!-- fixed pattern -->
                 </excludes>
             </resource>
         </resources>
         <plugins>
+            <!-- Compiler -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
@@ -39,17 +41,22 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+
+            <!-- WAR packaging -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>3.2.3</version>
+                <version>3.3.2</version> <!-- latest stable -->
                 <configuration>
                     <warSourceDirectory>WebContent</warSourceDirectory>
                 </configuration>
             </plugin>
+
+            <!-- Copy dependency (webapp-runner) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.3</version>
+                <version>3.6.0</version> <!-- updated -->
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -69,6 +76,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Snyk plugin -->
             <plugin>
                 <groupId>io.snyk</groupId>
                 <artifactId>snyk-maven-plugin</artifactId>
@@ -82,20 +91,27 @@
     </build>
 
     <dependencies>
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.3.7</version>
         </dependency>
+
+        <!-- MySQL -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.28</version>
         </dependency>
+
+        <!-- Servlet API -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
+            <scope>provided</scope> <!-- should be provided by Tomcat -->
         </dependency>
     </dependencies>
 </project>
+
