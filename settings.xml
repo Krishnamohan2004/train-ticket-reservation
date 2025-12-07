@@ -3,23 +3,26 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
           https://maven.apache.org/xsd/settings-1.0.0.xsd">
 
+  <!-- 1️⃣ Servers: Credentials for deploying artifacts to Nexus -->
   <servers>
     <server>
       <id>nexus</id>
-      <username>${env.NEXUS_USERNAME}</username>
-      <password>${env.NEXUS_PASSWORD}</password>
+      <username>${NEXUS_USERNAME}</username>
+      <password>${NEXUS_PASSWORD}</password>
     </server>
   </servers>
 
+  <!-- 2️⃣ Mirrors: Force Maven to download dependencies from Nexus -->
   <mirrors>
     <mirror>
       <id>nexus</id>
       <name>Nexus Public Mirror</name>
-      <url>${env.NEXUS_URL}/repository/maven-public/</url>
+      <url>${NEXUS_URL}/repository/maven-public/</url>
       <mirrorOf>*</mirrorOf>
     </mirror>
   </mirrors>
 
+  <!-- 3️⃣ Profiles: Define repositories and pluginRepositories -->
   <profiles>
     <profile>
       <id>nexus</id>
@@ -38,8 +41,10 @@
     </profile>
   </profiles>
 
+  <!-- 4️⃣ Active Profiles: Always activate the Nexus profile -->
   <activeProfiles>
     <activeProfile>nexus</activeProfile>
   </activeProfiles>
 
 </settings>
+
