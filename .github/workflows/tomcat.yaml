@@ -1,13 +1,13 @@
-name: CI/CD Pipeline Test
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
-      - master   # runs automatically on pushes to master
-  workflow_dispatch:  # still allows manual trigger
+      - master
+  workflow_dispatch:
 
 jobs:
-  test-build:
+  build-deploy:
     runs-on: ubuntu-latest
 
     env:
@@ -17,54 +17,55 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       TOMCAT_USER: ${{ secrets.TOMCAT_USER }}
       TOMCAT_PASSWORD: ${{ secrets.TOMCAT_PASSWORD }}
-      TOMCAT_HOST: localhost
+      TOMCAT_HOST: ${{ secrets.TOMCAT_HOST }}
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Java 17 and Maven
+      # 2️⃣ Setup Java 17 and Maven
+      - name: Setup Java & Maven
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
 
-      - name: Maven Validate
-        run: mvn validate
+      # 3️⃣ Maven Validate & Compile & Test
+      - name: Maven Build
+        run: mvn validate compile test
 
-      - name: Maven Compile
-        run: mvn compile
+      # 4️⃣ SonarQube Scan
+      - name: SonarQube Scan
+        run: mvn sonar:sonar \
+              -Dsonar.projectKey=train-ticket \
+              -Dsonar.host.url=${{ env.SONAR_HOST }} \
+              -Dsonar.login=${{ env.SONAR_TOKEN }}
 
-      - name: Maven Test
-        run: mvn test
-
-      - name: SonarQube Dry-Run
-        run: |
-          echo "Simulating SonarQube scan..."
-          mvn clean verify sonar:sonar \
-              -Dsonar.projectKey=test-project \
-              -Dsonar.host.url="${{ env.SONAR_HOST }}" \
-              -Dsonar.login="${{ env.SONAR_TOKEN }}" \
-              -Dsonar.dryRun=true
-
-      - name: Maven Package with Git SHA
+      # 5️⃣ Maven Package (dynamic version)
+      - name: Maven Package
         run: mvn package -Drevision=${{ github.sha }} -DskipTests
 
-      - name: Configure Maven for Nexus (dummy)
+      # 6️⃣ Configure Maven for Nexus
+      - name: Configure Maven
         run: |
           mkdir -p ~/.m2
-          echo "<settings><servers></servers></settings>" > ~/.m2/settings.xml
+          echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
 
-      - name: Upload Artifact to Nexus (dummy)
-        run: echo "Skipping actual Nexus deploy in test mode."
+      # 7️⃣ Upload Artifact to Nexus
+      - name: Deploy to Nexus
+        run: mvn deploy -DskipTests=true
 
-      - name: Deploy WAR to Tomcat (dummy)
+      # 8️⃣ Deploy WAR to Tomcat
+      - name: Deploy WAR to Tomcat
         run: |
           WAR_FILE="target/TrainBook-${{ github.sha }}.war"
           if [ -f "$WAR_FILE" ]; then
-            echo "WAR file exists: $WAR_FILE"
-            echo "Skipping actual deployment in test mode."
+            echo "Deploying WAR to Tomcat..."
+            curl -sf -u ${{ env.TOMCAT_USER }}:${{ env.TOMCAT_PASSWORD }} \
+              -T $WAR_FILE \
+              "http://${{ env.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
           else
             echo "WAR file not found!"
             exit 1
