@@ -1,17 +1,23 @@
-<settings>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 
+          https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
   <servers>
     <server>
       <id>nexus</id>
-      <username>${env.NEXUS_USERNAME}</username>
-      <password>${env.NEXUS_PASSWORD}</password>
+      <username>${nexus.username}</username>
+      <password>${nexus.password}</password>
     </server>
   </servers>
+
   <mirrors>
     <mirror>
-      <id>central</id>
-      <name>Nexus Mirror</name>
-      <url>https://nexus.example.com/repository/maven-public/</url>
+      <id>nexus-mirror</id>
+      <name>Nexus Repository Mirror</name>
+      <url>http://3.149.239.55:8081/repository/maven-public/</url>
       <mirrorOf>*</mirrorOf>
     </mirror>
   </mirrors>
+
 </settings>
