@@ -1,4 +1,4 @@
-name: CI/CD pipeline to Deploy to Tomcat
+name: CI/CD Pipeline to Deploy to Tomcat
 
 on:
   push:
@@ -21,44 +21,58 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3️⃣ Maven Validate
-      - name: Maven validate
-        run: mvn validate -Dproject.build.sourceEncoding=UTF-8
+      # 3️⃣ Cache Maven dependencies
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      # 4️⃣ Maven Compile
-      - name: Maven compile
-        run: mvn compile -Dproject.build.sourceEncoding=UTF-8
+      # 4️⃣ Maven Validate
+      - name: Maven Validate
+        run: mvn validate
 
-      # 5️⃣ Maven Test
-      - name: Maven test
-        run: mvn test -Dproject.build.sourceEncoding=UTF-8
+      # 5️⃣ Maven Compile
+      - name: Maven Compile
+        run: mvn compile
 
-      # 6️⃣ SonarQube Code Quality
-      - name: Sonar Code Quality
-        run: |
-          mvn clean verify sonar:sonar \
-            -Dsonar.projectKey=train-ticket \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dproject.build.sourceEncoding=UTF-8
+      # 6️⃣ Maven Test
+      - name: Maven Test
+        run: mvn test
 
-      # 7️⃣ Maven Package
-      - name: Maven package
-        run: mvn package -DskipTests -Dproject.build.sourceEncoding=UTF-8
+      # 7️⃣ SonarQube Code Quality
+      - name: SonarQube Scan
+        run: mvn sonar:sonar \
+          -Dsonar.projectKey=train-ticket \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # 8️⃣ Configure Maven settings.xml for Nexus
+      # 8️⃣ Maven Package
+      - name: Maven Package
+        run: mvn package -DskipTests
+
+      # 9️⃣ Configure Maven for Nexus
       - name: Configure Maven for Nexus
         run: |
           mkdir -p ~/.m2
           echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
 
-      # 9️⃣ Upload Artifact to Nexus
+      # 🔟 Upload Artifact to Nexus
       - name: Upload Artifact to Nexus
         run: mvn deploy -DskipTests=true
 
-      # 🔟 Deploy WAR to Tomcat
+      # 1️⃣1️⃣ Deploy WAR to Tomcat
       - name: Deploy to Tomcat
         run: |
-          curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-            -T target/TrainBook-1.0.0-SNAPSHOT.war \
-            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+          WAR_FILE="target/TrainBook-1.0.0-SNAPSHOT.war"
+          if [ -f "$WAR_FILE" ]; then
+            echo "Deploying WAR to Tomcat..."
+            curl -sf -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
+              -T $WAR_FILE \
+              "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+          else
+            echo "WAR file not found!"
+            exit 1
+          fi
