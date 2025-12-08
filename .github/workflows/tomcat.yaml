@@ -1,4 +1,4 @@
-name: CI/CD pipeline to deploy to Tomcat
+name: Full CI/CD Pipeline (SonarQube + Nexus + Tomcat)
 
 on:
   push:
@@ -10,54 +10,84 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source code
-      - name: Checkout code
+      # ---------------------------------------
+      # 1️⃣ CHECKOUT SOURCE CODE
+      # ---------------------------------------
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup JDK 17
+      # ---------------------------------------
+      # 2️⃣ SETUP JDK 17
+      # ---------------------------------------
       - name: Setup JDK 17
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: 17
 
-      # 3️⃣ Maven Build Lifecycle
-      - name: Maven Validate
-        run: mvn validate
-
-      - name: Maven Compile
-        run: mvn compile
-
-      - name: Maven Test
-        run: mvn test
-
-      - name: Maven Package
-        run: mvn -DskipTests package
-
-      # 4️⃣ SonarQube Code Quality Scan
-      - name: SonarQube Analysis
+      # ---------------------------------------
+      # 3️⃣ CONFIGURE MAVEN settings.xml
+      # ---------------------------------------
+      - name: Configure Maven settings.xml
         run: |
-          mvn sonar:sonar \
-            -Dsonar.projectKey=TrainBook \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/settings.xml
+          ${MAVEN_SETTINGS}
+          EOF
+        env:
+          MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
+
+      # ---------------------------------------
+      # 4️⃣ SONARQUBE ANALYSIS
+      # ---------------------------------------
+      - name: SonarQube Scan
+        run: |
+          mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # 5️⃣ Upload artifact to Nexus
-      - name: Upload Artifact to Nexus
-        run: |
-          mvn deploy \
-            -DskipTests \
-            -Dnexus.url=${{ secrets.NEXUS_URL }} \
-            -Dnexus.repo=${{ secrets.NEXUS_REPO }} \
-            -Dnexus.username=${{ secrets.NEXUS_USERNAME }} \
-            -Dnexus.password=${{ secrets.NEXUS_PASSWORD }}
-
-      # 6️⃣ Deploy WAR to Tomcat via SCP
-      - name: Deploy WAR to Tomcat (EC2)
-        uses: appleboy/scp-action@master
+      # ---------------------------------------
+      # 5️⃣ CHECK SONARQUBE QUALITY GATE
+      # ---------------------------------------
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+
+      # ---------------------------------------
+      # 6️⃣ BUILD WAR FILE
+      # ---------------------------------------
+      - name: Maven Package
+        run: mvn -B package
+
+      # ---------------------------------------
+      # 7️⃣ DEPLOY ARTIFACT TO NEXUS
+      # ---------------------------------------
+      - name: Deploy to Nexus
+        run: mvn deploy
+
+      # ---------------------------------------
+      # 8️⃣ SCP UPLOAD TO TOMCAT SERVER
+      # ---------------------------------------
+      - name: Copy WAR to Tomcat
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           source: "target/*.war"
           target: "/opt/tomcat/webapps/"
+
+      # ---------------------------------------
+      # 9️⃣ RESTART TOMCAT SERVICE
+      # ---------------------------------------
+      - name: Restart Tomcat
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            sudo systemctl restart tomcat
+            sudo systemctl status tomcat --no-pager
