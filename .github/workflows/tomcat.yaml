@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      NEXUS_USERNAME: ${{ secrets.TEST_NEXUS_USER }}
-      NEXUS_PASSWORD: ${{ secrets.TEST_NEXUS_PASSWORD }}
-      SONAR_HOST: ${{ secrets.TEST_SONAR_HOST }}
-      SONAR_TOKEN: ${{ secrets.TEST_SONAR_TOKEN }}
-      TOMCAT_USER: ${{ secrets.TEST_TOMCAT_USER }}
-      TOMCAT_PASSWORD: ${{ secrets.TEST_TOMCAT_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      SONAR_HOST: ${{ secrets.SONAR_HOST }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      TOMCAT_USER: ${{ secrets.TOMCAT_USER }}
+      TOMCAT_PASSWORD: ${{ secrets.TOMCAT_PASSWORD }}
       TOMCAT_HOST: localhost  # Local test Tomcat (or mock server)
 
     steps:
