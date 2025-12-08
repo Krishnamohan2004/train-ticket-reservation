@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline to Tomcat
 
 on:
   push:
@@ -24,43 +24,51 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Java 17 and Maven
-      - name: Setup Java & Maven
+      # 2️⃣ Setup Java & Maven
+      - name: Setup Java 17 and Maven
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
 
-      # 3️⃣ Maven Validate & Compile & Test
-      - name: Maven Build
-        run: mvn validate compile test
+      # 3️⃣ Maven Validate
+      - name: Maven Validate
+        run: mvn validate
 
-      # 4️⃣ SonarQube Scan
+      # 4️⃣ Maven Compile
+      - name: Maven Compile
+        run: mvn compile
+
+      # 5️⃣ Maven Test
+      - name: Maven Test
+        run: mvn test
+
+      # 6️⃣ SonarQube Scan (correctly)
       - name: SonarQube Scan
-        run: mvn sonar:sonar \
+        run: mvn clean verify sonar:sonar \
               -Dsonar.projectKey=train-ticket \
               -Dsonar.host.url=${{ env.SONAR_HOST }} \
               -Dsonar.login=${{ env.SONAR_TOKEN }}
 
-      # 5️⃣ Maven Package (dynamic version)
+      # 7️⃣ Maven Package
       - name: Maven Package
-        run: mvn package -Drevision=${{ github.sha }} -DskipTests
+        run: mvn package -DskipTests
 
-      # 6️⃣ Configure Maven for Nexus
-      - name: Configure Maven
+      # 8️⃣ Configure Maven settings.xml for Nexus
+      - name: Configure Maven for Nexus
         run: |
           mkdir -p ~/.m2
           echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
 
-      # 7️⃣ Upload Artifact to Nexus
-      - name: Deploy to Nexus
-        run: mvn deploy -DskipTests=true
+      # 9️⃣ Upload Artifact to Nexus
+      - name: Upload Artifact to Nexus
+        run: mvn deploy -DskipTests
 
-      # 8️⃣ Deploy WAR to Tomcat
+      # 🔟 Deploy WAR to Tomcat
       - name: Deploy WAR to Tomcat
         run: |
-          WAR_FILE="target/TrainBook-${{ github.sha }}.war"
+          WAR_FILE="target/TrainBook-1.0.0-SNAPSHOT.war"
           if [ -f "$WAR_FILE" ]; then
             echo "Deploying WAR to Tomcat..."
             curl -sf -u ${{ env.TOMCAT_USER }}:${{ env.TOMCAT_PASSWORD }} \
