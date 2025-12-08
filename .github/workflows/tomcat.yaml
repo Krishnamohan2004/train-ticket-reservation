@@ -18,56 +18,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup JDK 17
-      - name: Setup JDK 17
+      # 2️⃣ Setup JDK 17 and Maven
+      - name: Setup Java and Maven
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'maven'
 
-      # 3️⃣ Cache Maven dependencies
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      # 4️⃣ Maven Validate
+      # 3️⃣ Maven Validate
       - name: Maven Validate
         run: mvn validate
 
-      # 5️⃣ Maven Compile
+      # 4️⃣ Maven Compile
       - name: Maven Compile
         run: mvn compile
 
-      # 6️⃣ Maven Test
+      # 5️⃣ Maven Test
       - name: Maven Test
         run: mvn test
 
-      # 7️⃣ SonarQube Scan
+      # 6️⃣ SonarQube Scan (fixed)
       - name: SonarQube Scan
         run: mvn clean verify sonar:sonar \
              -Dsonar.projectKey=train-ticket \
              -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
              -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
-      # 8️⃣ Maven Package with Git SHA version
+      # 7️⃣ Maven Package with Git SHA
       - name: Maven Package
         run: mvn package -Drevision=${{ github.sha }} -DskipTests
 
-      # 9️⃣ Configure Maven for Nexus
+      # 8️⃣ Configure Maven for Nexus
       - name: Configure Maven for Nexus
         run: |
           mkdir -p ~/.m2
           echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
 
-      # 🔟 Upload Artifact to Nexus
+      # 9️⃣ Upload Artifact to Nexus
       - name: Upload Artifact to Nexus
         run: mvn deploy -DskipTests=true
 
-      # 1️⃣1️⃣ Deploy WAR to Tomcat
+      # 🔟 Deploy WAR to Tomcat
       - name: Deploy WAR to Tomcat
         run: |
           WAR_FILE="target/TrainBook-${{ github.sha }}.war"
