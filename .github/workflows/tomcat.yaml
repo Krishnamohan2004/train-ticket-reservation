@@ -1,7 +1,10 @@
 name: CI/CD Pipeline Test
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - master   # runs automatically on pushes to master
+  workflow_dispatch:  # still allows manual trigger
 
 jobs:
   test-build:
@@ -14,14 +17,12 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       TOMCAT_USER: ${{ secrets.TOMCAT_USER }}
       TOMCAT_PASSWORD: ${{ secrets.TOMCAT_PASSWORD }}
-      TOMCAT_HOST: localhost  # Local test Tomcat (or mock server)
+      TOMCAT_HOST: localhost
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Java and Maven
       - name: Setup Java 17 and Maven
         uses: actions/setup-java@v3
         with:
@@ -29,19 +30,15 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      # 3️⃣ Maven Validate
       - name: Maven Validate
         run: mvn validate
 
-      # 4️⃣ Maven Compile
       - name: Maven Compile
         run: mvn compile
 
-      # 5️⃣ Maven Test
       - name: Maven Test
         run: mvn test
 
-      # 6️⃣ SonarQube Scan (dry-run)
       - name: SonarQube Dry-Run
         run: |
           echo "Simulating SonarQube scan..."
@@ -51,21 +48,17 @@ jobs:
               -Dsonar.login="${{ env.SONAR_TOKEN }}" \
               -Dsonar.dryRun=true
 
-      # 7️⃣ Maven Package with Git SHA
-      - name: Maven Package
+      - name: Maven Package with Git SHA
         run: mvn package -Drevision=${{ github.sha }} -DskipTests
 
-      # 8️⃣ Configure Maven for Nexus (dummy)
-      - name: Configure Maven for Nexus
+      - name: Configure Maven for Nexus (dummy)
         run: |
           mkdir -p ~/.m2
           echo "<settings><servers></servers></settings>" > ~/.m2/settings.xml
 
-      # 9️⃣ Upload Artifact to Nexus (dummy)
-      - name: Upload Artifact to Nexus
+      - name: Upload Artifact to Nexus (dummy)
         run: echo "Skipping actual Nexus deploy in test mode."
 
-      # 🔟 Deploy WAR to Tomcat (dummy)
       - name: Deploy WAR to Tomcat (dummy)
         run: |
           WAR_FILE="target/TrainBook-${{ github.sha }}.war"
