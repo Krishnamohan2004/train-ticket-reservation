@@ -27,3 +27,37 @@ jobs:
 
       - name: Maven Compile
         run: mvn compile
+
+      - name: Maven Test
+        run: mvn test
+
+      - name: Maven Package
+        run: mvn -DskipTests package
+
+      # 4️⃣ SonarQube Code Quality Scan
+      - name: SonarQube Analysis
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=TrainBook \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # 5️⃣ Upload artifact to Nexus
+      - name: Upload Artifact to Nexus
+        run: |
+          mvn deploy \
+            -DskipTests \
+            -Dnexus.url=${{ secrets.NEXUS_URL }} \
+            -Dnexus.repo=${{ secrets.NEXUS_REPO }} \
+            -Dnexus.username=${{ secrets.NEXUS_USERNAME }} \
+            -Dnexus.password=${{ secrets.NEXUS_PASSWORD }}
+
+      # 6️⃣ Deploy WAR to Tomcat via SCP
+      - name: Deploy WAR to Tomcat (EC2)
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "target/*.war"
+          target: "/opt/tomcat/webapps/"
