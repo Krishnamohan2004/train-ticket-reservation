@@ -10,27 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: set-up jdk
+      # 2️⃣ Setup JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Maven validate
+      # 3️⃣ Maven lifecycle
+      - name: Maven Validate
         run: mvn validate
 
-      - name: Maven compile
+      - name: Maven Compile
         run: mvn compile
 
-      - name: Maven test
+      - name: Maven Test
         run: mvn test
 
-      - name: Maven package
+      - name: Maven Package
         run: mvn package
 
+      # 4️⃣ SonarQube Code Quality
       - name: Sonar Code Quality
         run: |
           mvn clean verify sonar:sonar \
@@ -38,23 +42,35 @@ jobs:
             -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
-            - name: Configure Maven settings.xml for Nexus
-               run: |
+      # 5️⃣ Configure Maven for Nexus
+      - name: Configure Maven settings.xml for Nexus
+        run: |
           mkdir -p ~/.m2
           cat <<EOF > ~/.m2/settings.xml
-          <settings>
-            <servers>
-              <server>
-                <id>nexus</id>
-                <username>${{ secrets.NEXUS_USERNAME }}</username>
-                <password>${{ secrets.NEXUS_PASSWORD }}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
+<settings>
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>${{ secrets.NEXUS_USERNAME }}</username>
+      <password>${{ secrets.NEXUS_PASSWORD }}</password>
+    </server>
+  </servers>
+  <mirrors>
+    <mirror>
+      <id>nexus-mirror</id>
+      <name>Nexus Repository Mirror</name>
+      <url>${{ secrets.NEXUS_REPO_URL }}</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
+</settings>
+EOF
 
+      # 6️⃣ Upload Artifact to Nexus
       - name: Upload Artifact to Nexus
         run: mvn deploy -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_REPO_URL }}
+
+      # 7️⃣ Deploy WAR to Tomcat
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
