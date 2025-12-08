@@ -31,10 +31,10 @@ jobs:
 
       - name: SonarQube Scan
         run: |
-         mvn -B verify sonar:sonar \
-          -Dsonar.projectKey=TrainBook \
-          -Dsonar.host.url=http://YOUR_PUBLIC_EC2_IP:9000 \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          mvn -B verify sonar:sonar \
+            -Dsonar.projectKey=TrainBook \
+            -Dsonar.host.url=http://YOUR_PUBLIC_EC2_IP:9000 \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Maven package
         run: mvn package -DskipTests -Dproject.build.sourceEncoding=UTF-8
@@ -51,4 +51,4 @@ jobs:
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
             -T target/TrainBook-1.0.0-SNAPSHOT.war \
-            "http://${{ se
+            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
