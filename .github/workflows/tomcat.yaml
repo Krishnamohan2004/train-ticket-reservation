@@ -47,10 +47,7 @@ jobs:
         run: |
           mkdir -p ~/.m2
           cat <<EOF > ~/.m2/settings.xml
-<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 
-                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+<settings>
   <servers>
     <server>
       <id>nexus</id>
@@ -69,5 +66,5 @@ EOF
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-          -T target/TrainBook-1.0.0-SNAPSHOT.war \
-          "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+            -T target/TrainBook-1.0.0-SNAPSHOT.war \
+            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
