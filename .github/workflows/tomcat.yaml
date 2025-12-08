@@ -30,7 +30,8 @@ jobs:
         run: mvn test -Dproject.build.sourceEncoding=UTF-8
 
       - name: SonarQube Scan
-        run: mvn -B verify sonar:sonar \
+        run: |
+         mvn -B verify sonar:sonar \
           -Dsonar.projectKey=TrainBook \
           -Dsonar.host.url=http://YOUR_PUBLIC_EC2_IP:9000 \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
