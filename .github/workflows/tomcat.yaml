@@ -1,80 +1,37 @@
-name: CI/CD Pipeline to Tomcat
-
-on:
+name: ci/cd pipeline to deploy to tomcat
+on: 
   push:
-    branches:
-      - master
-  workflow_dispatch:
-
+    branches: master
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
-
-    env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      SONAR_HOST: ${{ secrets.SONAR_HOST }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      TOMCAT_USER: ${{ secrets.TOMCAT_USER }}
-      TOMCAT_PASSWORD: ${{ secrets.TOMCAT_PASSWORD }}
-      TOMCAT_HOST: ${{ secrets.TOMCAT_HOST }}
-
     steps:
-      # 1️⃣ Checkout code
-      - name: Checkout code
+      - name: checkout code
         uses: actions/checkout@v3
-
-      # 2️⃣ Setup Java & Maven
-      - name: Setup Java 17 and Maven
+      
+      - name: set-up jdk
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
-
-      # 3️⃣ Maven Validate
-      - name: Maven Validate
+          java-version: '17'   # Updated Java version
+      - name: validate with maven
         run: mvn validate
-
-      # 4️⃣ Maven Compile
-      - name: Maven Compile
+      - name: compile with maven
         run: mvn compile
-
-      # 5️⃣ Maven Test
-      - name: Maven Test
+      - name: test with maven
         run: mvn test
-
-      # 6️⃣ SonarQube Scan (correctly)
-      - name: SonarQube Scan
-        run: mvn clean verify sonar:sonar \
-              -Dsonar.projectKey=train-ticket \
-              -Dsonar.host.url=${{ env.SONAR_HOST }} \
-              -Dsonar.login=${{ env.SONAR_TOKEN }}
-
-      # 7️⃣ Maven Package
-      - name: Maven Package
-        run: mvn package -DskipTests
-
-      # 8️⃣ Configure Maven settings.xml for Nexus
-      - name: Configure Maven for Nexus
+      - name: package with maven
+        run: mvn package
+      - name: soqnrqube code quality 
         run: |
-          mkdir -p ~/.m2
-          echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
+            mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=train-ticket\
+            -Dsonar.host.url="${{ secrets.SONAR_HOST}}" \
+            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
+     
+      
 
-      # 9️⃣ Upload Artifact to Nexus
-      - name: Upload Artifact to Nexus
-        run: mvn deploy -DskipTests
 
-      # 🔟 Deploy WAR to Tomcat
-      - name: Deploy WAR to Tomcat
-        run: |
-          WAR_FILE="target/TrainBook-1.0.0-SNAPSHOT.war"
-          if [ -f "$WAR_FILE" ]; then
-            echo "Deploying WAR to Tomcat..."
-            curl -sf -u ${{ env.TOMCAT_USER }}:${{ env.TOMCAT_PASSWORD }} \
-              -T $WAR_FILE \
-              "http://${{ env.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
-          else
-            echo "WAR file not found!"
-            exit 1
-          fi
+
+
+
