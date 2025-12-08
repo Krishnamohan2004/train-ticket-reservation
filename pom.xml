@@ -15,11 +15,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <!-- For SonarQube (no need to define plugin here unless using special config) -->
     <build>
         <plugins>
 
-            <!-- Compiler Plugin -->
+            <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -37,7 +36,7 @@
                 <version>3.3.2</version>
             </plugin>
 
-            <!-- Nexus Deploy Plugin -->
+            <!-- Deploy Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
@@ -47,16 +46,16 @@
         </plugins>
     </build>
 
-    <!-- Distribution Management for Nexus Upload -->
+    <!-- Nexus Repository -->
     <distributionManagement>
         <repository>
             <id>nexus-releases</id>
-            <url>http://your-nexus-domain:8081/repository/maven-releases/</url>
+            <url>http://3.145.163.221:8081/repository/maven-releases/</url>
         </repository>
 
         <snapshotRepository>
             <id>nexus-snapshots</id>
-            <url>http://your-nexus-domain:8081/repository/maven-snapshots/</url>
+            <url>http://3.145.163.221:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
