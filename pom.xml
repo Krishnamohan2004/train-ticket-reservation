@@ -6,19 +6,19 @@
 
     <groupId>com.example</groupId>
     <artifactId>TrainBook</artifactId>
-    <version>${revision}</version>
+    <version>${revision}</version> <!-- dynamic version -->
     <packaging>war</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <revision>1.0.0-SNAPSHOT</revision> <!-- Default version -->
+        <revision>1.0.0-SNAPSHOT</revision> <!-- default -->
     </properties>
 
     <build>
         <plugins>
-            <!-- Maven Compiler -->
+            <!-- Compiler plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -29,7 +29,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Maven WAR Plugin -->
+            <!-- WAR plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -38,20 +38,14 @@
                     <warName>TrainBook-${revision}</warName>
                 </configuration>
             </plugin>
+
+            <!-- Surefire plugin for unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+            </plugin>
         </plugins>
     </build>
 
-    <distributionManagement>
-        <repository>
-            <id>nexus-repo</id> <!-- Must match settings.xml server ID -->
-            <name>Nexus Releases</name>
-            <url>https://nexus.example.com/repository/maven-releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>nexus-repo</id>
-            <name>Nexus Snapshots</name>
-            <url>https://nexus.example.com/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
-
-</project>
+    <distributionMa
