@@ -9,6 +9,10 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
     steps:
       # 1️⃣ Checkout code
       - name: Checkout code
@@ -42,16 +46,16 @@ jobs:
       - name: Maven Test
         run: mvn test
 
-      # 7️⃣ SonarQube Code Quality
+      # 7️⃣ SonarQube Scan
       - name: SonarQube Scan
-        run: mvn sonar:sonar \
-          -Dsonar.projectKey=train-ticket \
-          -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        run: mvn clean verify sonar:sonar \
+             -Dsonar.projectKey=train-ticket \
+             -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
+             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
-      # 8️⃣ Maven Package
+      # 8️⃣ Maven Package with Git SHA version
       - name: Maven Package
-        run: mvn package -DskipTests
+        run: mvn package -Drevision=${{ github.sha }} -DskipTests
 
       # 9️⃣ Configure Maven for Nexus
       - name: Configure Maven for Nexus
@@ -64,9 +68,9 @@ jobs:
         run: mvn deploy -DskipTests=true
 
       # 1️⃣1️⃣ Deploy WAR to Tomcat
-      - name: Deploy to Tomcat
+      - name: Deploy WAR to Tomcat
         run: |
-          WAR_FILE="target/TrainBook-1.0.0-SNAPSHOT.war"
+          WAR_FILE="target/TrainBook-${{ github.sha }}.war"
           if [ -f "$WAR_FILE" ]; then
             echo "Deploying WAR to Tomcat..."
             curl -sf -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
