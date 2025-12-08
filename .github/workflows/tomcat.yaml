@@ -10,15 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2️⃣ Set up JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # 3️⃣ Maven lifecycle
       - name: Maven validate
         run: mvn validate
 
@@ -31,6 +34,7 @@ jobs:
       - name: Maven package
         run: mvn package
 
+      # 4️⃣ SonarQube Code Quality
       - name: Sonar Code Quality
         run: |
           mvn clean verify sonar:sonar \
@@ -38,12 +42,14 @@ jobs:
             -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
             -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
 
+      # 5️⃣ Configure Maven settings.xml for Nexus
       - name: Configure Maven settings.xml for Nexus
         run: |
           mkdir -p ~/.m2
           cat <<EOF > ~/.m2/settings.xml
 <settings>
-  <servers>
+
+<servers>
     <server>
       <id>nexus</id>
       <username>${{ secrets.NEXUS_USERNAME }}</username>
@@ -53,11 +59,16 @@ jobs:
 </settings>
 EOF
 
+      # 6️⃣ Upload Artifact to Nexus
       - name: Upload Artifact to Nexus
-        run: mvn deploy -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_REPO_URL }}
+        run: mvn deploy -s ~/.m2/settings.xml -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_REPO_URL }}
 
+      # 7️⃣ Deploy WAR to Tomcat
       - name: Deploy to Tomcat
         run: |
+          if [ ! -f target/TrainBook-1.0.0-SNAPSHOT.war ]; then
+            echo "WAR file not found!"
+            exit 1
+          fi
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-            -T target/TrainBook-1.0.0-SNAPSHOT.war \
-            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+            -T target/TrainB
