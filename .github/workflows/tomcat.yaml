@@ -21,9 +21,70 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3️⃣ Maven Build Lifecycle
+      # 3️⃣ Configure Maven settings.xml for Nexus
+      - name: Configure Maven settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+            <servers>
+              <server>
+                <id>nexus</id>
+                <username>${{ secrets.NEXUS_USERNAME }}</username>
+                <password>${{ secrets.NEXUS_PASSWORD }}</password>
+              </server>
+            </servers>
+
+            <mirrors>
+              <mirror>
+                <id>nexus-mirror</id>
+                <name>Nexus Proxy</name>
+                <url>${{ secrets.NEXUS_REPO_URL }}</url>
+                <mirrorOf>*</mirrorOf>
+              </mirror>
+            </mirrors>
+
+          </settings>
+          EOF
+
+      # 4️⃣ Maven Build Lifecycle
       - name: Maven Validate
         run: mvn validate
 
       - name: Maven Compile
         run: mvn compile
+
+      - name: Maven Test
+        run: mvn test
+
+      - name: Maven Package
+        run: mvn package
+
+      # 5️⃣ Upload WAR to Nexus Repository
+      - name: Upload Artifact to Nexus
+        run: mvn deploy -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_REPO_URL }}
+
+      # 6️⃣ Deploy WAR to Tomcat server
+      - name: Copy WAR to Tomcat
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.TOMCAT_HOST }}
+          username: ${{ secrets.TOMCAT_USER }}
+          password: ${{ secrets.TOMCAT_PASSWORD }}
+          source: "target/*.war"
+          target: "/opt/tomcat/webapps/"
+
+      # 7️⃣ Restart Tomcat Service
+      - name: Restart Tomcat
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.TOMCAT_HOST }}
+          username: ${{ secrets.TOMCAT_USER }}
+          password: ${{ secrets.TOMCAT_PASSWORD }}
+          script: |
+            sudo systemctl restart tomcat
+            sudo systemctl status tomcat --no-pager
