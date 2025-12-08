@@ -1,14 +1,30 @@
-<settings>
-  <servers>
-    <server>
-      <id>nexus-snapshots</id>
-      <username>admin</username>
-      <password>Ashvik@#9</password>
-    </server>
-    <server>
-      <id>nexus-releases</id>
-      <username>admin</username>
-      <password>Ashvik@#9</password>
-    </server>
-  </servers>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <servers>
+        <server>
+            <id>nexus-repo</id> <!-- Must match pom.xml <id> -->
+            <username>${env.NEXUS_USERNAME}</username>
+            <password>${env.NEXUS_PASSWORD}</password>
+        </server>
+    </servers>
+
+    <mirrors>
+        <mirror>
+            <id>nexus</id>
+            <mirrorOf>*</mirrorOf>
+            <url>https://nexus.example.com/repository/maven-public/</url>
+        </mirror>
+    </mirrors>
+
+    <profiles>
+        <profile>
+            <id>nexus</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+    </profiles>
 </settings>
