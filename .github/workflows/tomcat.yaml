@@ -20,42 +20,34 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-
       - name: Maven validate
         run: mvn validate -Dproject.build.sourceEncoding=UTF-8
 
       - name: Maven compile
         run: mvn compile -Dproject.build.sourceEncoding=UTF-8
 
-     
       - name: Maven test
         run: mvn test -Dproject.build.sourceEncoding=UTF-8
 
-      - name: Sonar Code Quality
-        run: |
-          mvn clean verify sonar:sonar \
-            -Dsonar.projectKey=train-ticket \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dproject.build.sourceEncoding=UTF-8
+      - name: SonarQube Scan
+        run: mvn -B verify sonar:sonar \
+          -Dsonar.projectKey=TrainBook \
+          -Dsonar.host.url=http://YOUR_PUBLIC_EC2_IP:9000 \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Maven package
         run: mvn package -DskipTests -Dproject.build.sourceEncoding=UTF-8
 
-    
       - name: Configure Maven for Nexus
         run: |
           mkdir -p ~/.m2
           echo "${{ secrets.MAVEN_SETTINGS }}" > ~/.m2/settings.xml
 
-      
       - name: Upload Artifact to Nexus
         run: mvn deploy -DskipTests=true
 
-     
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
             -T target/TrainBook-1.0.0-SNAPSHOT.war \
-            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
-
+            "http://${{ se
