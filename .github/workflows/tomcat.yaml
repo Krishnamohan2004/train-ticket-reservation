@@ -69,5 +69,5 @@ EOF
       - name: Deploy to Tomcat
         run: |
           curl -v -u ${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }} \
-            -T target/TrainBook-1.0.0-SNAPSHOT.war \
-            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
+          -T target/TrainBook-1.0.0-SNAPSHOT.war \
+          "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/vcube140&update=true"
