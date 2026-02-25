@@ -1,4 +1,4 @@
-name: Publish WAR to Nexus
+name: Publish WAR to Nexus (Snapshots)
 
 on:
   push:
@@ -20,20 +20,23 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Build WAR (pom.xml is in repo root)
       - name: Build WAR
         run: mvn -B clean package
 
+      # Verify WAR file
       - name: Verify WAR file
         run: ls -l target
 
+      # ✅ Correct version for maven-snapshots repo
       - name: Set version
-        run: echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+        run: echo "VERSION=1.0.${{ github.run_number }}-SNAPSHOT" >> $GITHUB_ENV
 
-      - name: Publish WAR to Nexus
+      - name: Publish WAR to Nexus (Snapshots)
         run: |
           WAR_FILE=$(ls target/*.war)
 
-          echo "Uploading $WAR_FILE"
+          echo "Uploading $WAR_FILE with version $VERSION"
 
           mvn deploy:deploy-file \
             -Durl=${{ secrets.NEXUS_URL }} \
