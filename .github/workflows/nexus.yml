@@ -22,19 +22,16 @@ jobs:
 
       # Build the WAR (pom.xml is inside TrainBook folder)
       - name: Build WAR
-        working-directory: TrainBook
         run: mvn -B clean package
 
       # Just to verify WAR is created
       - name: Verify WAR file
-        working-directory: TrainBook
         run: ls -l target
 
       - name: Set version
         run: echo "VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Publish WAR to Nexus
-        working-directory: TrainBook
         run: |
           WAR_FILE=$(ls target/*.war)
 
