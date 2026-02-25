@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -35,8 +35,8 @@ jobs:
           </settings>
           EOF
 
-      - name: Upload Artifact to Nexus
+      - name: Deploy to Nexus
         run: |
           mvn deploy \
             -DskipTests \
-            -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_REPO_URL }}
+            -DaltDeploymentRepository=nexus::${{ secrets.NEXUS_REPO_URL }}
