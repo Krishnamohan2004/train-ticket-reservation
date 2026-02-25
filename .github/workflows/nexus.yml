@@ -20,11 +20,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # Build the WAR (pom.xml is inside TrainBook folder)
       - name: Build WAR
         run: mvn -B clean package
 
-      # Just to verify WAR is created
       - name: Verify WAR file
         run: ls -l target
 
@@ -45,6 +43,8 @@ jobs:
             -DartifactId=TrainBook \
             -Dversion=${{ env.VERSION }} \
             -Dpackaging=war \
-            -DgeneratePom=true
+            -DgeneratePom=true \
+            -Dusername=${{ secrets.NEXUS_USERNAME }} \
+            -Dpassword=${{ secrets.NEXUS_PASSWORD }}
         env:
           MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
