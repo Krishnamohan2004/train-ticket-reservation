@@ -1,42 +1,42 @@
-name: Nexus Upload Only
+name: CI - SonarQube Only
 
 on:
+  push:
+    branches: [dev, test, pre-prod, main]
+
   workflow_dispatch:
 
 jobs:
-  nexus:
+  sonar-scan:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-      - name: Build WAR
-        run: mvn clean package -DskipTests
+      - name: Cache Maven Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      - name: Configure Maven settings.xml for Nexus
+      - name: Build project
+        run: mvn -B clean verify
+
+      - name: Run SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mkdir -p ~/.m2
-          cat <<EOF > ~/.m2/settings.xml
-          <settings>
-            <servers>
-              <server>
-                <id>nexus</id>
-                <username>${{ secrets.NEXUS_USERNAME }}</username>
-                <password>${{ secrets.NEXUS_PASSWORD }}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
-
-      - name: Deploy to Nexus
-        run: |
-          mvn deploy \
-            -DskipTests \
-            -DaltDeploymentRepository=nexus::${{ secrets.NEXUS_REPO_URL }}  
+          mvn -B sonar:sonar \
+            -Dsonar.projectKey=myapp \
+            -Dsonar.projectName="MyApp" \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
