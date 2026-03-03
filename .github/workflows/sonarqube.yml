@@ -1,102 +1,38 @@
-name: CI/CD Pipeline - Build, SonarQube, Deploy
-
-on:
+name: ci/cd pipeline to deploy to tomcat
+on: 
   push:
-    branches:
-      - dev
-      - test
-      - pre-prod
-      - main
-  workflow_dispatch:
-
+    branches: master
 jobs:
-
-  build-sonar:
+  build-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Cache Maven Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Build & Test
-        run: mvn -B clean verify
-
-      - name: Run SonarQube Scan
-        run: |
-          mvn -B sonar:sonar \
-            -Dsonar.projectKey=myapp \
-            -Dsonar.projectName="MyApp" \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
-      - name: Upload WAR Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: war-file
-          path: target/*.war
-
-
-  deploy-dev:
-    needs: build-sonar
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download WAR Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: war-file
-
-      - name: Deploy to DEV Tomcat
-        env:
-          URL: ${{ secrets.TOMCAT_URL_DEV }}
-          USER: ${{ secrets.TOMCAT_USER_DEV }}
-          PASS: ${{ secrets.TOMCAT_PASS_DEV }}
-        run: |
-          WAR_FILE=$(ls *.war | head -n 1)
-          echo "Deploying $WAR_FILE to DEV ($URL)"
-
-          curl -v -u "$USER:$PASS" --fail --show-error -T "$WAR_FILE" \
-          "$URL/deploy?path=/train-ticket-reservation&update=true"
-
-
-  deploy-nexus:
-    needs: build-sonar
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Configure Maven settings.xml for Nexus
-        run: |
-          mkdir -p ~/.m2
-          cat <<EOF > ~/.m2/settings.xml
-          <settings>
-            <servers>
-              <server>
-                <id>nexus</id>
-                <username>${{ secrets.NEXUS_USERNAME }}</username>
-                <password>${{ secrets.NEXUS_PASSWORD }}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
-      - name: Deploy Artifact to Nexus 
+      - name: checkout code
+        uses: actions/checkout@v3
       
+      - name: set-up jdk
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'   # Updated Java version
+      
+      - name: validate with maven
+        run: mvn validate
+
+      - name: compile with maven
+        run: mvn compile
+      
+      - name: test with maven
+        run: mvn test
+      
+      - name: package with maven
+        run: mvn clean package
+
+      - name: verify WAR file
+        run: ls -lh target/
+        
+      - name: Build, Test and SonarQube Scan
         run: |
-          mvn deploy \
-          -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_REPO_URL }}
+          mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=train-ticket-reservation \
+            -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
+            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
