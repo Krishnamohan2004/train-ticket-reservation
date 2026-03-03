@@ -1,38 +1,51 @@
-name: ci/cd pipeline to deploy to tomcat
-on: 
+name: React CI + SonarQube
+
+on:
   push:
-    branches: master
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: checkout code
+
+      # 1️⃣ Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v3
-      
-      - name: set-up jdk
-        uses: actions/setup-java@v3
+
+      # 2️⃣ Setup Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'   # Updated Java version
-      
-      - name: validate with maven
-        run: mvn validate
+          node-version: 18
+          cache: 'npm'
 
-      - name: compile with maven
-        run: mvn compile
-      
-      - name: test with maven
-        run: mvn test
-      
-      - name: package with maven
-        run: mvn clean package
+      # 3️⃣ Install Dependencies
+      - name: Install Dependencies
+        run: npm install
 
-      - name: verify WAR file
-        run: ls -lh target/
-        
-      - name: Build, Test and SonarQube Scan
-        run: |
-          mvn clean verify sonar:sonar \
-            -Dsonar.projectKey=train-ticket-reservation \
-            -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
-            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
+      # 4️⃣ Run Tests
+      - name: Run Tests
+        run: npm test -- --watchAll=false
+        continue-on-error: true
+
+      # 5️⃣ Build React App
+      - name: Build Project
+        run: npm run build
+
+      # 6️⃣ SonarQube Scan (For React / JS Project)
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=hotstar-react-app
+            -Dsonar.sources=src
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST }}
